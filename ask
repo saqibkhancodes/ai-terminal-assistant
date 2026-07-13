@@ -11,10 +11,10 @@ API_KEY = os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
     print("Error: GEMINI_API_KEY environment variable not set.")
     sys.exit(1)
-# Pointing to the universally unlocked gemini-pro (1.0) model
+
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={API_KEY}"
 
-# Cramming the strict behavior instructions directly into the prompt
+
 instruction = (
     "You are a strict Linux terminal expert. Translate the user's request "
     "into a valid, single-line Linux bash command. Return ONLY the raw command. "
@@ -39,9 +39,9 @@ try:
     with urllib.request.urlopen(req) as response:
         result = json.loads(response.read().decode("utf-8"))
         command = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-        print(f"\n💡 Suggested Command:\n{command}\n")
+        print(f"\n Suggested Command:\n{command}\n")
         
 except Exception as e:
-    print(f"\n❌ Connection Error: {e}")
+    print(f"\n Connection Error: {e}")
     if hasattr(e, 'read'):
         print(e.read().decode('utf-8'))

@@ -13,8 +13,8 @@ I built this because I was tired of dealing with Ubuntu's PEP 668 (`externally-m
 
 1. Clone the repo:
    ```bash
-git clone https://github.com/saqibkhancodes/ai-terminal-assistant.git
-cd ai-terminal-assistant
+   git clone https://github.com/saqibkhancodes/ai-terminal-assistant.git 
+   cd ai-terminal-assistant
    ```
 
 2. Make it a global command:

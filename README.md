@@ -54,3 +54,33 @@ $ ask "show me the top 5 RAM heavy processes"
 💡 Suggested Command:
 ps aux --sort=-%mem | head -n 6
 ```
+---
+
+## oops - The OS Error Interceptor
+
+`oops` is a non-interactive telemetry interceptor. When you type a command that fails, `oops` catches the raw `stderr` output, serializes it, and sends it to the Gemini API to instantly generate the correct command.
+
+### Setup
+
+Since you already cloned the repo and set up your API key for `ask`, you just need to make `oops` executable and move it to your system binaries:
+
+```bash
+chmod +x oops
+sudo mv oops /usr/local/bin/
+```
+*(Note: `oops` shares the exact same `GEMINI_API_KEY` environment variable as `ask`. You do not need to configure the key twice).*
+
+### Usage
+
+Pass your broken command to `oops` in quotes. It will run the command in the background, intercept the failure, and print the fix.
+
+```bash
+$ oops "catt new_file.txt"
+
+[INFO] Executing target command: catt new_file.txt
+[127] Process terminated unexpectedly.
+[TRACE] OS Stderr: /bin/sh: 1: catt: not found
+
+[SOLUTION] Validated Command:
+cat new_file.txt
+```

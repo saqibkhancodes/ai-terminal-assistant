@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+
+import sys
+import subprocess
+import json
+import urllib.request
+import os
+
+# --- 1. Argument Parsing ---
+if len(sys.argv) < 2:
+    print("Usage: oops '<command>'")
+    sys.exit(1)
+    
+bad_command = sys.argv[1]
+print(f"[INFO] Executing target command: {bad_command}\n")
+
+# --- 2. Process Execution & Stream Isolation ---
+process = subprocess.run(
+    bad_command,
+    shell=True,
+    stdout=subprocess.PIPE, 
+    stderr=subprocess.PIPE  
+)
+
+if process.returncode == 0:
+    print("[SUCCESS] Command executed successfully. No intervention required.")
+    print(process.stdout.decode('utf-8'))
+    sys.exit(0)
+
+# --- 3. Telemetry Extraction ---
+error_message = process.stderr.decode('utf-8').strip()
+
+print(f"[{process.returncode}] Process terminated unexpectedly.")
+print(f"[TRACE] OS Stderr: {error_message}")
+print("\n[INFO] Serializing telemetry data for remote inference...")
+
+# --- 4. Remote Inference Pipeline (Stable Blocking Request) ---
+API_KEY = os.environ.get("GEMINI_API_KEY")
+if not API_KEY:
+    print("[FATAL] Environment variable 'GEMINI_API_KEY' is not set.")
+    sys.exit(1)
+
+prompt = f"""
+The target execution failed.
+Command: `{bad_command}`
+Stderr trace: `{error_message}`
+Provide ONLY the corrected terminal command. No explanations.
+"""
+
+URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={API_KEY}"
+
+data = json.dumps({
+    "system_instruction": {
+        "parts": [{"text": "You are a strict Linux terminal expert. Output ONLY raw bash code. No markdown, no backticks."}]
+    },
+    "contents": [{"parts": [{"text": prompt}]}]
+}).encode('utf-8')
+
+request = urllib.request.Request(URL, data=data, headers={'Content-Type': 'application/json'})
+
+try:
+    with urllib.request.urlopen(request) as response:
+        raw_json = response.read().decode('utf-8')
+        command = json.loads(raw_json)['candidates'][0]['content']['parts'][0]['text'].strip()
+        
+        print("\n[SOLUTION] Validated Command:")
+        print(command)
+        print()
+except urllib.error.URLError as e:
+    print(f"\n[ERROR] Network inference failed: {e}")
+except Exception as e:
+    print(f"\n[FATAL] Unexpected system error: {e}")
